@@ -25,6 +25,14 @@ type LLMConfig struct {
 	APIKey  string
 }
 
+type LLMType string
+
+const (
+	BasicLLM     LLMType = "basic"
+	ReasoningLLM LLMType = "reasoning"
+	VisionLLM    LLMType = "vision"
+)
+
 const (
 	ReasoningModel   = "REASONING_MODEL"
 	ReasoningBaseURL = "REASONING_BASE_URL"
@@ -53,46 +61,23 @@ func LoadConfig() *Config {
 	_ = godotenv.Load()
 
 	config = &Config{
-		ReasoningLLM:       LLMConfig{},
-		BasicLLM:           LLMConfig{},
-		VisionLLM:          LLMConfig{},
+		ReasoningLLM: LLMConfig{
+			Model:   os.Getenv(ReasoningModel),
+			BaseURL: os.Getenv(ReasoningBaseURL),
+			APIKey:  os.Getenv(ReasoningAPIKey),
+		},
+		BasicLLM: LLMConfig{
+			Model:   os.Getenv(BasicModel),
+			BaseURL: os.Getenv(BasicBaseURL),
+			APIKey:  os.Getenv(BasicAPIKey),
+		},
+		VisionLLM: LLMConfig{
+			Model:   os.Getenv(VLLMModel),
+			BaseURL: os.Getenv(VLLMBaseURL),
+			APIKey:  os.Getenv(VLLMAPIKey),
+		},
 		TavilyMaxResults:   TavilyMaxResults,
-		ChromeInstancePath: "",
-	}
-
-	// 只覆盖环境变量中存在的配置项
-	if model := os.Getenv(ReasoningModel); model != "" {
-		config.ReasoningLLM.Model = model
-	}
-	if baseURL := os.Getenv(ReasoningBaseURL); baseURL != "" {
-		config.ReasoningLLM.BaseURL = baseURL
-	}
-	if apiKey := os.Getenv(ReasoningAPIKey); apiKey != "" {
-		config.ReasoningLLM.APIKey = apiKey
-	}
-
-	if model := os.Getenv(BasicModel); model != "" {
-		config.BasicLLM.Model = model
-	}
-	if baseURL := os.Getenv(BasicBaseURL); baseURL != "" {
-		config.BasicLLM.BaseURL = baseURL
-	}
-	if apiKey := os.Getenv(BasicAPIKey); apiKey != "" {
-		config.BasicLLM.APIKey = apiKey
-	}
-
-	if model := os.Getenv(VLLMModel); model != "" {
-		config.VisionLLM.Model = model
-	}
-	if baseURL := os.Getenv(VLLMBaseURL); baseURL != "" {
-		config.VisionLLM.BaseURL = baseURL
-	}
-	if apiKey := os.Getenv(VLLMAPIKey); apiKey != "" {
-		config.VisionLLM.APIKey = apiKey
-	}
-
-	if chromeInstancePath := os.Getenv(ChromeInstancePath); chromeInstancePath != "" {
-		config.ChromeInstancePath = chromeInstancePath
+		ChromeInstancePath: os.Getenv(ChromeInstancePath),
 	}
 
 	return config
@@ -101,4 +86,18 @@ func LoadConfig() *Config {
 // GetConfig 获取当前配置
 func GetConfig() *Config {
 	return config
+}
+
+func GetAgentLLMConfig(agent AgentType) *LLMConfig {
+	llmType := AgentLLMap[agent]
+	switch llmType {
+	case ReasoningLLM:
+		return &config.ReasoningLLM
+	case BasicLLM:
+		return &config.BasicLLM
+	case VisionLLM:
+		return &config.VisionLLM
+	default:
+		panic("unknown llm type: " + llmType)
+	}
 }
