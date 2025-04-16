@@ -12,20 +12,22 @@ import (
 	"catwithtudou/langmanus_go/log"
 )
 
-func BuildGraph[I, O any](ctx context.Context) (compose.Runnable[I, O], error) {
+// BuildGraph 构建计算图
+func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.Message], error) {
 	g := compose.NewGraph[map[string]any, *schema.Message]()
 
-	coordinator, err := nodes.CoordinatorCompose()
+	nodes, err := nodes.BuildNodes()
 	if err != nil {
-		log.GetLogger().Error("[BuildGraph]failed to build coordinator node", zap.Error(err))
+		log.GetLogger().Error("[BuildGraph]failed to build nodes", zap.Error(err))
 		return nil, err
 	}
 
-	_ = g.AddLambdaNode(string(config.CoordinatorAgent), coordinator)
+	_ = g.AddLambdaNode(string(config.CoordinatorAgent), nodes.Coordinator)
+	_ = g.AddLambdaNode(string(config.PlannerAgent), nodes.Planner)
 
 	_ = g.AddEdge(compose.START, string(config.CoordinatorAgent))
+	_ = g.AddEdge(string(config.CoordinatorAgent), string(config.PlannerAgent))
+	_ = g.AddEdge(string(config.PlannerAgent), compose.END)
 
-	// ...TODO: add other nodes
-
-	return nil, nil
+	return g.Compile(ctx)
 }

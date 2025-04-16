@@ -5,8 +5,10 @@ import (
 
 	"github.com/cloudwego/eino-ext/components/model/ark"
 	"github.com/cloudwego/eino/components/model"
+	"go.uber.org/zap"
 
 	"catwithtudou/langmanus_go/config"
+	"catwithtudou/langmanus_go/log"
 )
 
 type llmClient struct {
@@ -17,32 +19,23 @@ type llmClient struct {
 
 var llmClientInstance *llmClient
 
-func InitLLMClient() error {
-	ctx := context.Background()
+func InitLLMClient(ctx context.Context) error {
 
-	basic, err := ark.NewChatModel(ctx, &ark.ChatModelConfig{
-		APIKey:  config.GetConfig().BasicLLM.APIKey,
-		Model:   config.GetConfig().BasicLLM.Model,
-		BaseURL: config.GetConfig().BasicLLM.BaseURL,
-	})
+	basic, err := createArkChatModel(ctx, &config.GetConfig().BasicLLM)
 	if err != nil {
 		return err
 	}
 
-	reasoning, err := ark.NewChatModel(ctx, &ark.ChatModelConfig{
-		APIKey:  config.GetConfig().ReasoningLLM.APIKey,
-		Model:   config.GetConfig().ReasoningLLM.Model,
-		BaseURL: config.GetConfig().ReasoningLLM.BaseURL,
-	})
+	reasoning, err := createArkChatModel(ctx, &config.GetConfig().ReasoningLLM)
 	if err != nil {
 		return err
 	}
 
-	vision, err := ark.NewChatModel(ctx, &ark.ChatModelConfig{
-		APIKey:  config.GetConfig().VisionLLM.APIKey,
-		Model:   config.GetConfig().VisionLLM.Model,
-		BaseURL: config.GetConfig().VisionLLM.BaseURL,
-	})
+	vision, err := createArkChatModel(ctx, &config.GetConfig().VisionLLM)
+	if err != nil {
+		return err
+	}
+
 	if err != nil {
 		return err
 	}
@@ -54,6 +47,19 @@ func InitLLMClient() error {
 	}
 
 	return nil
+}
+
+func createArkChatModel(ctx context.Context, config *config.LLMConfig) (model.ChatModel, error) {
+	if config == nil || config.APIKey == "" || config.Model == "" || config.BaseURL == "" {
+		log.GetLogger().Info("[createArkChatModel]invalid config", zap.Any("config", config))
+		return nil, nil
+	}
+
+	return ark.NewChatModel(ctx, &ark.ChatModelConfig{
+		APIKey:  config.APIKey,
+		Model:   config.Model,
+		BaseURL: config.BaseURL,
+	})
 }
 
 func (l *llmClient) GetBasicModel() model.ChatModel {

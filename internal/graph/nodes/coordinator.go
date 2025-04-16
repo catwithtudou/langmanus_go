@@ -31,9 +31,15 @@ func newCoordinatorNode() *CoordinatorNode {
 	}
 }
 
-func (n *CoordinatorNode) Invoke(ctx context.Context, input string, opts ...model.Option) (output *schema.Message, err error) {
+func (n *CoordinatorNode) Invoke(ctx context.Context, input map[string]any, opts ...model.Option) (output *schema.Message, err error) {
+	userQuery, ok := input["input"].(string)
+	if !ok {
+		log.GetLogger().Error("[CoordinatorNode]failed to get user query from input")
+		return nil, nil
+	}
+
 	promptMsg := prompts.GetSystemPromptSchemaMsg(ctx, n.name, map[string]any{
-		prompts.UserQueryKey: input,
+		prompts.UserQueryKey: userQuery,
 	})
 
 	result, err := n.chatModel.Generate(ctx, promptMsg, opts...)
@@ -45,9 +51,15 @@ func (n *CoordinatorNode) Invoke(ctx context.Context, input string, opts ...mode
 	return result, nil
 }
 
-func (n *CoordinatorNode) Stream(ctx context.Context, input string, opts ...model.Option) (output *schema.StreamReader[*schema.Message], err error) {
+func (n *CoordinatorNode) Stream(ctx context.Context, input map[string]any, opts ...model.Option) (output *schema.StreamReader[*schema.Message], err error) {
+	userQuery, ok := input["input"].(string)
+	if !ok {
+		log.GetLogger().Error("[CoordinatorNode]failed to get user query from input")
+		return nil, nil
+	}
+
 	promptMsg := prompts.GetSystemPromptSchemaMsg(ctx, n.name, map[string]any{
-		prompts.UserQueryKey: input,
+		prompts.UserQueryKey: userQuery,
 	})
 
 	result, err := n.chatModel.Stream(ctx, promptMsg, opts...)
