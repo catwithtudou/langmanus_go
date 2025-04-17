@@ -12,6 +12,8 @@ const (
 	ReporterAgent    AgentType = "reporter"
 )
 
+var TeamMembers = []AgentType{ResearcherAgent, CoderAgent, BrowserAgent, ReporterAgent}
+
 var AgentLLMap = map[AgentType]LLMType{
 	CoordinatorAgent: BasicLLM,
 	PlannerAgent:     ReasoningLLM,

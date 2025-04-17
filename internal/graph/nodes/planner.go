@@ -3,7 +3,6 @@
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strings"
 
 	"github.com/cloudwego/eino/components/model"
@@ -24,9 +23,13 @@ type PlannerNode struct {
 	reasoningModel model.ChatModel
 }
 
-func PlannerCompose() (*compose.Lambda, error) {
+func PlannerCompose() (*compose.Lambda, *PlannerNode, error) {
 	n := newPlannerNode()
-	return compose.AnyLambda(n.Invoke, n.Stream, nil, nil)
+	lambda, err := compose.AnyLambda(n.Invoke, n.Stream, nil, nil)
+	if err != nil {
+		return nil, n, err
+	}
+	return lambda, n, nil
 }
 
 func newPlannerNode() *PlannerNode {
@@ -86,22 +89,8 @@ func (n *PlannerNode) Invoke(ctx context.Context, input map[string]any, opts ...
 		return nil, err
 	}
 
-	// 处理响应结果
-	fullResponse := result.Content
-
-	// 清理JSON格式
-	fullResponse = cleanJSONResponse(fullResponse)
-
-	// 验证JSON格式
-	if !isValidJSON(fullResponse) {
-		log.GetLogger().Warn("[PlannerNode]规划响应不是有效的JSON")
-		return nil, errors.New("规划响应不是有效的JSON")
-	}
-
 	// 创建一个带有附加信息的消息
-	result.Content = fullResponse
-	// 添加路由信息到结果中 (通过自定义字段或其他方式)
-	// 这部分需要根据eino框架的实际schema.Message定义进行调整
+	result.Content = cleanJSONResponse(result.Content)
 
 	return result, nil
 }
@@ -133,6 +122,31 @@ func (n *PlannerNode) Stream(ctx context.Context, input map[string]any, opts ...
 
 	// 返回流式响应
 	return streamReader, nil
+}
+
+func (n *PlannerNode) Branch(ctx context.Context, in *schema.Message) (endNode string, err error) {
+	fullResponse := in.Content
+	if fullResponse == "" {
+		log.GetLogger().Warn("[PlannerNode]规划响应为空")
+		return compose.END, nil
+	}
+
+	fullResponse = cleanJSONResponse(fullResponse)
+	if !isValidJSON(fullResponse) {
+		log.GetLogger().Warn("[PlannerNode]规划响应不是有效的JSON")
+		return compose.END, nil
+	}
+
+	return string(config.SupervisorAgent), nil
+}
+
+func (n *PlannerNode) BranchNodes() map[string]bool {
+	return map[string]bool{string(config.SupervisorAgent): true, compose.END: true}
+}
+
+func (n *PlannerNode) StateUpdate(ctx context.Context, out string, state *State) (string, error) {
+
+	return out, nil
 }
 
 // cleanJSONResponse 清理响应中的JSON格式

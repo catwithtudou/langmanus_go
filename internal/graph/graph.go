@@ -14,7 +14,7 @@ import (
 
 // BuildGraph 构建计算图
 func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.Message], error) {
-	g := compose.NewGraph[map[string]any, *schema.Message]()
+	g := compose.NewGraph[map[string]any, *schema.Message](compose.WithGenLocalState(nodes.NewState))
 
 	nodes, err := nodes.BuildNodes()
 	if err != nil {
@@ -26,8 +26,16 @@ func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.M
 	_ = g.AddLambdaNode(string(config.PlannerAgent), nodes.Planner)
 
 	_ = g.AddEdge(compose.START, string(config.CoordinatorAgent))
-	_ = g.AddEdge(string(config.CoordinatorAgent), string(config.PlannerAgent))
-	_ = g.AddEdge(string(config.PlannerAgent), compose.END)
+
+	_ = g.AddBranch(string(config.CoordinatorAgent), compose.NewGraphBranch(
+		nodes.CoordinatorNode.Branch,
+		nodes.CoordinatorNode.BranchNodes()))
+
+	_ = g.AddBranch(string(config.PlannerAgent), compose.NewGraphBranch(
+		nodes.PlannerNode.Branch,
+		nodes.PlannerNode.BranchNodes()))
+
+	_ = g.AddEdge(string(config.SupervisorAgent), compose.END)
 
 	return g.Compile(ctx)
 }

@@ -7,23 +7,36 @@ import (
 )
 
 type ComposeNodes struct {
-	Coordinator *compose.Lambda
-	Planner     *compose.Lambda
+	Coordinator     *compose.Lambda
+	CoordinatorNode *CoordinatorNode
+	Planner         *compose.Lambda
+	PlannerNode     *PlannerNode
+	Supervisor      *compose.Lambda
+	SupervisorNode  *SupervisorNode
 }
 
 func BuildNodes() (*ComposeNodes, error) {
-	coordinator, err := CoordinatorCompose()
+	coordinator, coordinatorNode, err := CoordinatorCompose()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build coordinator node: %w", err)
 	}
 
-	planner, err := PlannerCompose()
+	planner, plannerNode, err := PlannerCompose()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build planner node: %w", err)
 	}
 
+	supervisor, supervisorNode, err := SupervisorCompose()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build supervisor node: %w", err)
+	}
+
 	return &ComposeNodes{
-		Coordinator: coordinator,
-		Planner:     planner,
+		Coordinator:     coordinator,
+		CoordinatorNode: coordinatorNode,
+		Planner:         planner,
+		PlannerNode:     plannerNode,
+		Supervisor:      supervisor,
+		SupervisorNode:  supervisorNode,
 	}, nil
 }

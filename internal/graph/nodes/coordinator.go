@@ -2,6 +2,7 @@ package nodes
 
 import (
 	"context"
+	"strings"
 
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/compose"
@@ -14,14 +15,22 @@ import (
 	"catwithtudou/langmanus_go/log"
 )
 
+const (
+	handoffToPlanner = "handoff_to_planner"
+)
+
 type CoordinatorNode struct {
 	name      config.AgentType
 	chatModel model.ChatModel
 }
 
-func CoordinatorCompose() (*compose.Lambda, error) {
+func CoordinatorCompose() (*compose.Lambda, *CoordinatorNode, error) {
 	n := newCoordinatorNode()
-	return compose.AnyLambda(n.Invoke, n.Stream, nil, nil)
+	lambda, err := compose.AnyLambda(n.Invoke, n.Stream, nil, nil)
+	if err != nil {
+		return nil, n, err
+	}
+	return lambda, n, nil
 }
 
 func newCoordinatorNode() *CoordinatorNode {
@@ -69,4 +78,16 @@ func (n *CoordinatorNode) Stream(ctx context.Context, input map[string]any, opts
 	}
 
 	return result, nil
+}
+
+func (n *CoordinatorNode) Branch(ctx context.Context, in *schema.Message) (endNode string, err error) {
+	if strings.Contains(in.Content, handoffToPlanner) {
+		return string(config.PlannerAgent), nil
+	}
+
+	return compose.END, nil
+}
+
+func (n *CoordinatorNode) BranchNodes() map[string]bool {
+	return map[string]bool{string(config.PlannerAgent): true, compose.END: true}
 }
