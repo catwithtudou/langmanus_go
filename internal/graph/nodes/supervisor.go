@@ -17,6 +17,8 @@ import (
 	"catwithtudou/langmanus_go/log"
 )
 
+// TODO: 完善 supervisor 节点的逻辑，特别是传递给下一个节点的信息等
+
 // Router 用于定义下一步路由的结构体
 type Router struct {
 	Next string `json:"next"`

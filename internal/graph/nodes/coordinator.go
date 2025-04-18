@@ -6,7 +6,6 @@ import (
 
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/compose"
-	"github.com/cloudwego/eino/schema"
 	"go.uber.org/zap"
 
 	"catwithtudou/langmanus_go/config"
@@ -17,6 +16,7 @@ import (
 
 const (
 	handoffToPlanner = "handoff_to_planner"
+	coordinatorGoto  = "coordinator_goto"
 )
 
 type CoordinatorNode struct {
@@ -26,7 +26,7 @@ type CoordinatorNode struct {
 
 func CoordinatorCompose() (*compose.Lambda, *CoordinatorNode, error) {
 	n := newCoordinatorNode()
-	lambda, err := compose.AnyLambda(n.Invoke, n.Stream, nil, nil)
+	lambda, err := compose.AnyLambda(n.Invoke, nil, nil, nil)
 	if err != nil {
 		return nil, n, err
 	}
@@ -40,7 +40,7 @@ func newCoordinatorNode() *CoordinatorNode {
 	}
 }
 
-func (n *CoordinatorNode) Invoke(ctx context.Context, input map[string]any, opts ...model.Option) (output *schema.Message, err error) {
+func (n *CoordinatorNode) Invoke(ctx context.Context, input map[string]any, opts ...model.Option) (output map[string]any, err error) {
 	userQuery, ok := input["input"].(string)
 	if !ok {
 		log.GetLogger().Error("[CoordinatorNode]failed to get user query from input")
@@ -57,31 +57,40 @@ func (n *CoordinatorNode) Invoke(ctx context.Context, input map[string]any, opts
 		return nil, err
 	}
 
-	return result, nil
+	if strings.Contains(result.Content, handoffToPlanner) {
+		input[coordinatorGoto] = config.PlannerAgent
+	}
+
+	return input, nil
 }
 
-func (n *CoordinatorNode) Stream(ctx context.Context, input map[string]any, opts ...model.Option) (output *schema.StreamReader[*schema.Message], err error) {
-	userQuery, ok := input["input"].(string)
+// func (n *CoordinatorNode) Stream(ctx context.Context, input map[string]any, opts ...model.Option) (output *schema.StreamReader[*schema.Message], err error) {
+// 	userQuery, ok := input["input"].(string)
+// 	if !ok {
+// 		log.GetLogger().Error("[CoordinatorNode]failed to get user query from input")
+// 		return nil, nil
+// 	}
+//
+// 	promptMsg := prompts.GetSystemPromptSchemaMsg(ctx, n.name, map[string]any{
+// 		prompts.UserQueryKey: userQuery,
+// 	})
+//
+// 	result, err := n.chatModel.Stream(ctx, promptMsg, opts...)
+// 	if err != nil {
+// 		log.GetLogger().Error("[CoordinatorNode]failed to stream chat model", zap.Error(err))
+// 		return nil, err
+// 	}
+//
+// 	return result, nil
+// }
+
+func (n *CoordinatorNode) Branch(ctx context.Context, in map[string]any) (endNode string, err error) {
+	coordinatorGoto, ok := in[coordinatorGoto].(config.AgentType)
 	if !ok {
-		log.GetLogger().Error("[CoordinatorNode]failed to get user query from input")
-		return nil, nil
+		return compose.END, nil
 	}
 
-	promptMsg := prompts.GetSystemPromptSchemaMsg(ctx, n.name, map[string]any{
-		prompts.UserQueryKey: userQuery,
-	})
-
-	result, err := n.chatModel.Stream(ctx, promptMsg, opts...)
-	if err != nil {
-		log.GetLogger().Error("[CoordinatorNode]failed to stream chat model", zap.Error(err))
-		return nil, err
-	}
-
-	return result, nil
-}
-
-func (n *CoordinatorNode) Branch(ctx context.Context, in *schema.Message) (endNode string, err error) {
-	if strings.Contains(in.Content, handoffToPlanner) {
+	if coordinatorGoto == config.PlannerAgent {
 		return string(config.PlannerAgent), nil
 	}
 
