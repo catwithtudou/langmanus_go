@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	Finish config.AgentType = "finish"
+	Finish config.AgentType = "FINISH"
 )
 
 type State struct {
@@ -17,6 +17,11 @@ type State struct {
 	fullPlan             string
 	deepThinkingMode     bool
 	searchBeforePlanning bool
+}
+
+// Router 用于定义下一步路由的结构体
+type Router struct {
+	Next string `json:"next"`
 }
 
 func NewState(ctx context.Context) *State {

@@ -20,14 +20,12 @@ const (
 	CurrentTimeKey = "CURRENT_TIME"
 )
 
-func GetSystemPromptSchemaMsg(ctx context.Context, agent config.AgentType, input map[string]any) []*schema.Message {
-	// 合并输入参数与系统变量
+func GetSystemPromptSchemaMsgWithInput(ctx context.Context, agent config.AgentType, input map[string]any) []*schema.Message {
 	params := make(map[string]any)
 	for k, v := range input {
 		params[k] = v
 	}
 
-	// 添加系统默认变量
 	params[CurrentTimeKey] = time.Now().Format("2006-01-02 15:04:05")
 
 	template := prompt.FromMessages(schema.FString,
@@ -37,6 +35,23 @@ func GetSystemPromptSchemaMsg(ctx context.Context, agent config.AgentType, input
 	messages, err := template.Format(ctx, params)
 	if err != nil {
 		log.GetLogger().Error("[GetSystemPromptSchemaMsg]failed to format template",
+			zap.Error(err))
+	}
+
+	return messages
+}
+
+func GetSystemPromptSchemaMsgWithMsg(ctx context.Context, agent config.AgentType, schemaMsg *schema.Message) []*schema.Message {
+	params := make(map[string]any)
+	params[CurrentTimeKey] = time.Now().Format("2006-01-02 15:04:05")
+
+	template := prompt.FromMessages(schema.FString,
+		schema.SystemMessage(getSystemPrompt(agent)),
+		schemaMsg)
+
+	messages, err := template.Format(ctx, params)
+	if err != nil {
+		log.GetLogger().Error("[GetSystemPromptSchemaMsgWithMsg]failed to format template",
 			zap.Error(err))
 	}
 

@@ -40,6 +40,10 @@ func newCoordinatorNode() *CoordinatorNode {
 	}
 }
 
+func (n *CoordinatorNode) Name() string {
+	return string(n.name)
+}
+
 func (n *CoordinatorNode) Invoke(ctx context.Context, input map[string]any, opts ...model.Option) (output map[string]any, err error) {
 	userQuery, ok := input["input"].(string)
 	if !ok {
@@ -47,7 +51,7 @@ func (n *CoordinatorNode) Invoke(ctx context.Context, input map[string]any, opts
 		return nil, nil
 	}
 
-	promptMsg := prompts.GetSystemPromptSchemaMsg(ctx, n.name, map[string]any{
+	promptMsg := prompts.GetSystemPromptSchemaMsgWithInput(ctx, n.name, map[string]any{
 		prompts.UserQueryKey: userQuery,
 	})
 

@@ -55,7 +55,7 @@ func (n *PlannerNode) Invoke(ctx context.Context, input map[string]any, opts ...
 	}
 
 	// 构建提示消息
-	promptMsg := prompts.GetSystemPromptSchemaMsg(ctx, n.name, map[string]any{
+	promptMsg := prompts.GetSystemPromptSchemaMsgWithInput(ctx, n.name, map[string]any{
 		prompts.UserQueryKey: userQuery,
 	})
 
@@ -79,50 +79,19 @@ func (n *PlannerNode) Invoke(ctx context.Context, input map[string]any, opts ...
 		}
 
 		fullResponse += chunk.Content
-
-		log.GetLogger().Debug("[PlannerNode]stream.Recv()", zap.Any("chunk", chunk))
 	}
+	log.GetLogger().Info("[PlannerNode] full response", zap.String("fullResponse", fullResponse))
 
 	fullResponse = cleanJSONResponse(fullResponse)
+
+	log.GetLogger().Debug("[PlannerNode] full response clean json response", zap.String("fullResponse", fullResponse))
 
 	return &schema.Message{
 		Content: fullResponse,
 		Role:    schema.User,
 		Name:    n.Name(),
-		Extra: map[string]any{
-			"full_response": fullResponse,
-		},
 	}, nil
 }
-
-// func (n *PlannerNode) Stream(ctx context.Context, input map[string]any, opts ...model.Option) (output *schema.StreamReader[*schema.Message], err error) {
-// 	log.GetLogger().Info("[PlannerNode]流式生成执行计划")
-//
-// 	// 从coordinator节点接收输入
-// 	userQuery, ok := input["input"].(string)
-// 	if !ok {
-// 		log.GetLogger().Error("[PlannerNode]无法从输入获取用户查询")
-// 		return nil, nil
-// 	}
-//
-// 	// 构建提示消息
-// 	promptMsg := prompts.GetSystemPromptSchemaMsg(ctx, n.name, map[string]any{
-// 		prompts.UserQueryKey: userQuery,
-// 	})
-//
-// 	// 检查是否需要在规划前进行搜索
-// 	n.checkSearchBeforePlanning(input, userQuery)
-//
-// 	// 调用模型流式生成计划
-// 	streamReader, err := n.getTargetModel(input).Stream(ctx, promptMsg, opts...)
-// 	if err != nil {
-// 		log.GetLogger().Error("[PlannerNode]流式调用聊天模型失败", zap.Error(err))
-// 		return nil, err
-// 	}
-//
-// 	// 返回流式响应
-// 	return streamReader, nil
-// }
 
 func (n *PlannerNode) Branch(ctx context.Context, in *schema.Message) (endNode string, err error) {
 	fullResponse := in.Content
@@ -134,6 +103,14 @@ func (n *PlannerNode) Branch(ctx context.Context, in *schema.Message) (endNode s
 	if !isValidJSON(fullResponse) {
 		log.GetLogger().Warn("[PlannerNode]规划响应不是有效的JSON")
 		return compose.END, nil
+	}
+
+	if err = compose.ProcessState[*State](ctx, func(ctx context.Context, state *State) error {
+		state.fullPlan = fullResponse
+		return nil
+	}); err != nil {
+		log.GetLogger().Error("[PlannerNode]更新状态失败", zap.Error(err))
+		return compose.END, err
 	}
 
 	return string(config.SupervisorAgent), nil
