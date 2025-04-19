@@ -15,8 +15,6 @@ import (
 	"catwithtudou/langmanus_go/log"
 )
 
-// TODO: 完善 supervisor 节点的逻辑，特别是传递给下一个节点的信息等
-
 // SupervisorNode 监督节点，负责协调整个工作流并决定下一步应该由哪个代理执行
 type SupervisorNode struct {
 	name      config.AgentType

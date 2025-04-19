@@ -39,5 +39,7 @@ func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.M
 		nodes.SupervisorNode.Branch,
 		nodes.SupervisorNode.BranchNodes()))
 
+	_ = g.AddEdge(string(config.ResearcherAgent), string(config.SupervisorAgent))
+
 	return g.Compile(ctx)
 }
