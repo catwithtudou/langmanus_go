@@ -24,6 +24,8 @@ func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.M
 
 	_ = g.AddLambdaNode(string(config.CoordinatorAgent), nodes.Coordinator)
 	_ = g.AddLambdaNode(string(config.PlannerAgent), nodes.Planner)
+	_ = g.AddLambdaNode(string(config.SupervisorAgent), nodes.Supervisor)
+	_ = g.AddLambdaNode(string(config.ResearcherAgent), nodes.Researcher)
 
 	_ = g.AddEdge(compose.START, string(config.CoordinatorAgent))
 

@@ -13,6 +13,8 @@ type ComposeNodes struct {
 	PlannerNode     *PlannerNode
 	Supervisor      *compose.Lambda
 	SupervisorNode  *SupervisorNode
+	Researcher      *compose.Lambda
+	ResearcherNode  *ResearcherNode
 }
 
 func BuildNodes() (*ComposeNodes, error) {
@@ -31,6 +33,11 @@ func BuildNodes() (*ComposeNodes, error) {
 		return nil, fmt.Errorf("failed to build supervisor node: %w", err)
 	}
 
+	researcher, researcherNode, err := ResearcherCompose()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build researcher node: %w", err)
+	}
+
 	return &ComposeNodes{
 		Coordinator:     coordinator,
 		CoordinatorNode: coordinatorNode,
@@ -38,5 +45,7 @@ func BuildNodes() (*ComposeNodes, error) {
 		PlannerNode:     plannerNode,
 		Supervisor:      supervisor,
 		SupervisorNode:  supervisorNode,
+		Researcher:      researcher,
+		ResearcherNode:  researcherNode,
 	}, nil
 }

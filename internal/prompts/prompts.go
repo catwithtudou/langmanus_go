@@ -29,7 +29,7 @@ func GetSystemPromptSchemaMsgWithInput(ctx context.Context, agent config.AgentTy
 	params[CurrentTimeKey] = time.Now().Format("2006-01-02 15:04:05")
 
 	template := prompt.FromMessages(schema.FString,
-		schema.SystemMessage(getSystemPrompt(agent)),
+		schema.SystemMessage(GetSystemPrompt(agent)),
 		schema.UserMessage(UserQueryKey))
 
 	messages, err := template.Format(ctx, params)
@@ -46,7 +46,7 @@ func GetSystemPromptSchemaMsgWithMsg(ctx context.Context, agent config.AgentType
 	params[CurrentTimeKey] = time.Now().Format("2006-01-02 15:04:05")
 
 	template := prompt.FromMessages(schema.FString,
-		schema.SystemMessage(getSystemPrompt(agent)),
+		schema.SystemMessage(GetSystemPrompt(agent)),
 		schemaMsg)
 
 	messages, err := template.Format(ctx, params)
@@ -58,7 +58,7 @@ func GetSystemPromptSchemaMsgWithMsg(ctx context.Context, agent config.AgentType
 	return messages
 }
 
-func getSystemPrompt(agent config.AgentType) string {
+func GetSystemPrompt(agent config.AgentType) string {
 	switch agent {
 	case config.CoordinatorAgent:
 		return loadPromptTemplate(string(config.CoordinatorAgent))

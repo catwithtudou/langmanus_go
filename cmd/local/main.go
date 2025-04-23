@@ -8,6 +8,7 @@ import (
 	"catwithtudou/langmanus_go/config"
 	"catwithtudou/langmanus_go/internal/llm"
 	internal "catwithtudou/langmanus_go/internal/service"
+	"catwithtudou/langmanus_go/internal/tools"
 	"catwithtudou/langmanus_go/log"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	defer log.GetLogger().Sync()
 	config.LoadConfig()
 	llm.InitLLMClient(ctx)
+	tools.InitTools(ctx)
 
 	output, err := internal.RunAgentWorkflow(ctx, "你好")
 	if err != nil {
