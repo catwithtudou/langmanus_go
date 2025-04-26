@@ -1,8 +1,9 @@
-﻿package tools
+package tools
 
 import (
-	"catwithtudou/langmanus_go/log"
 	"context"
+
+	"catwithtudou/langmanus_go/log"
 
 	"github.com/cloudwego/eino-ext/components/tool/duckduckgo"
 	"github.com/cloudwego/eino-ext/components/tool/duckduckgo/ddgsearch"

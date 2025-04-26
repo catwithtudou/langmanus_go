@@ -1,11 +1,12 @@
-﻿package tools
+package tools
 
 import (
-	"catwithtudou/langmanus_go/log"
 	"context"
 	"encoding/json"
 	neturl "net/url"
 	"regexp"
+
+	"catwithtudou/langmanus_go/log"
 
 	urlloader "github.com/cloudwego/eino-ext/components/document/loader/url"
 	"github.com/cloudwego/eino/components/document"
