@@ -1,20 +1,17 @@
 ﻿package nodes
 
 import (
+	"catwithtudou/langmanus_go/config"
+	"catwithtudou/langmanus_go/internal/agent"
+	"catwithtudou/langmanus_go/internal/llm"
+	"catwithtudou/langmanus_go/log"
 	"context"
 
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
 	"go.uber.org/zap"
-
-	"catwithtudou/langmanus_go/config"
-	"catwithtudou/langmanus_go/internal/agent"
-	"catwithtudou/langmanus_go/internal/llm"
-	"catwithtudou/langmanus_go/log"
 )
-
-// TODO: 实现 reasearcher 的 react 实现以及节点的转移
 
 // ResearcherNode     研究代理节点,负责执行研究任务
 type ResearcherNode struct {

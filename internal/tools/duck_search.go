@@ -1,14 +1,13 @@
 ﻿package tools
 
 import (
+	"catwithtudou/langmanus_go/log"
 	"context"
 
 	"github.com/cloudwego/eino-ext/components/tool/duckduckgo"
 	"github.com/cloudwego/eino-ext/components/tool/duckduckgo/ddgsearch"
 	"github.com/cloudwego/eino/components/tool"
 	"go.uber.org/zap"
-
-	"catwithtudou/langmanus_go/log"
 )
 
 const (
@@ -35,6 +34,4 @@ func initDuckSearchTool(ctx context.Context) {
 	}
 
 	duckSearchTool = tool
-
-	return
 }
