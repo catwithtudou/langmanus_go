@@ -12,7 +12,7 @@ import (
 	"catwithtudou/langmanus_go/log"
 )
 
-// BuildGraph 构建计算图
+// BuildGraph constructs the computation graph
 func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.Message], error) {
 	g := compose.NewGraph[map[string]any, *schema.Message](compose.WithGenLocalState(nodes.NewState))
 

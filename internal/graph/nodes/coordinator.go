@@ -51,9 +51,7 @@ func (n *CoordinatorNode) Invoke(ctx context.Context, input map[string]any, opts
 		return nil, nil
 	}
 
-	promptMsg := prompts.GetSystemPromptSchemaMsgWithInput(ctx, n.name, map[string]any{
-		prompts.UserQueryKey: userQuery,
-	})
+	promptMsg := prompts.GetSystemPromptSchemaMsgWithInput(ctx, n.name, userQuery)
 
 	result, err := n.chatModel.Generate(ctx, promptMsg, opts...)
 	if err != nil {

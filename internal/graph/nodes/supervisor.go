@@ -1,4 +1,4 @@
-package nodes
+﻿package nodes
 
 import (
 	"context"
@@ -15,7 +15,7 @@ import (
 	"catwithtudou/langmanus_go/log"
 )
 
-// SupervisorNode 监督节点，负责协调整个工作流并决定下一步应该由哪个代理执行
+// SupervisorNode is responsible for coordinating the entire workflow and deciding which agent should execute next
 type SupervisorNode struct {
 	name      config.AgentType
 	chatModel model.ChatModel
@@ -42,13 +42,13 @@ func (n *SupervisorNode) Name() string {
 }
 
 func (n *SupervisorNode) Invoke(ctx context.Context, input *schema.Message, opts ...model.Option) (output *schema.Message, err error) {
-	log.GetLogger().Info("[SupervisorNode]评估下一步行动")
+	log.GetLogger().Info("[SupervisorNode] Evaluating next action")
 
 	messages := prompts.GetSystemPromptSchemaMsgWithMsg(ctx, n.name, input)
 
 	result, err := n.chatModel.Generate(ctx, messages, opts...)
 	if err != nil {
-		log.GetLogger().Error("[SupervisorNode]调用聊天模型失败", zap.Error(err))
+		log.GetLogger().Error("[SupervisorNode] Failed to call chat model", zap.Error(err))
 		return nil, err
 	}
 
@@ -58,11 +58,11 @@ func (n *SupervisorNode) Invoke(ctx context.Context, input *schema.Message, opts
 
 	var router Router
 	if err := sonic.UnmarshalString(fullResponse, &router); err != nil {
-		log.GetLogger().Error("[SupervisorNode]解析路由决策失败", zap.Error(err))
+		log.GetLogger().Error("[SupervisorNode] Failed to parse routing decision", zap.Error(err))
 		return nil, err
 	}
 
-	log.GetLogger().Info("[SupervisorNode]将任务委派给", zap.String("agent", router.Next))
+	log.GetLogger().Info("[SupervisorNode] Delegating task to", zap.String("agent", router.Next))
 
 	if input.Extra == nil {
 		input.Extra = make(map[string]any)
@@ -75,12 +75,12 @@ func (n *SupervisorNode) Invoke(ctx context.Context, input *schema.Message, opts
 func (n *SupervisorNode) Branch(ctx context.Context, in *schema.Message) (endNode string, err error) {
 	next, ok := in.Extra["next"].(string)
 	if !ok {
-		log.GetLogger().Warn("[SupervisorNode]规划响应为空")
+		log.GetLogger().Warn("[SupervisorNode] Planning response is empty")
 		return compose.END, nil
 	}
 
 	if next == string(Finish) {
-		log.GetLogger().Info("[SupervisorNode]工作流程已完成")
+		log.GetLogger().Info("[SupervisorNode] Workflow completed")
 		return compose.END, nil
 	}
 
@@ -88,7 +88,7 @@ func (n *SupervisorNode) Branch(ctx context.Context, in *schema.Message) (endNod
 		state.next = next
 		return nil
 	}); err != nil {
-		log.GetLogger().Error("[SupervisorNode]更新状态失败", zap.Error(err))
+		log.GetLogger().Error("[SupervisorNode] Failed to update state", zap.Error(err))
 		return compose.END, err
 	}
 

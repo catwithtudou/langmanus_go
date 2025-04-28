@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 
+	"github.com/cloudwego/eino-ext/components/tool/duckduckgo"
 	"github.com/cloudwego/eino/components/model"
 	"github.com/cloudwego/eino/compose"
 	"github.com/cloudwego/eino/schema"
@@ -13,10 +14,11 @@ import (
 	"catwithtudou/langmanus_go/config"
 	"catwithtudou/langmanus_go/internal/llm"
 	"catwithtudou/langmanus_go/internal/prompts"
+	"catwithtudou/langmanus_go/internal/tools"
 	"catwithtudou/langmanus_go/log"
 )
 
-// PlannerNode 规划节点，负责生成整体执行计划
+// PlannerNode is responsible for generating the overall execution plan
 type PlannerNode struct {
 	name           config.AgentType
 	chatModel      model.ChatModel
@@ -45,27 +47,31 @@ func (n *PlannerNode) Name() string {
 }
 
 func (n *PlannerNode) Invoke(ctx context.Context, input map[string]any, opts ...model.Option) (output *schema.Message, err error) {
-	log.GetLogger().Info("[PlannerNode]生成完整执行计划")
+	log.GetLogger().Info("[PlannerNode] Generating complete execution plan")
 
-	// 从coordinator节点接收输入
+	// Receive input from coordinator node
 	userQuery, ok := input["input"].(string)
 	if !ok {
-		log.GetLogger().Error("[PlannerNode]无法从输入获取用户查询")
+		log.GetLogger().Error("[PlannerNode] Failed to get user query from input")
 		return nil, nil
 	}
 
-	// 构建提示消息
-	promptMsg := prompts.GetSystemPromptSchemaMsgWithInput(ctx, n.name, map[string]any{
-		prompts.UserQueryKey: userQuery,
-	})
+	// Check if search is needed before planning
+	searchResults := n.checkSearchBeforePlanning(ctx, input, userQuery)
+	if len(searchResults) > 0 {
+		searchResultsJson, err := json.Marshal(searchResults)
+		if err == nil {
+			userQuery += "\n\n# Relative Search Results\n\n" + string(searchResultsJson)
+		}
+	}
 
-	// 检查是否需要在规划前进行搜索
-	n.checkSearchBeforePlanning(input, userQuery)
+	// Build prompt message
+	promptMsg := prompts.GetSystemPromptSchemaMsgWithInput(ctx, n.name, userQuery)
 
-	// 调用模型生成计划
+	// Call model to generate plan
 	streamReader, err := n.getTargetModel(input).Stream(ctx, promptMsg, opts...)
 	if err != nil {
-		log.GetLogger().Error("[PlannerNode]调用聊天模型失败", zap.Error(err))
+		log.GetLogger().Error("[PlannerNode] Failed to call chat model", zap.Error(err))
 		return nil, err
 	}
 
@@ -96,20 +102,20 @@ func (n *PlannerNode) Invoke(ctx context.Context, input map[string]any, opts ...
 func (n *PlannerNode) Branch(ctx context.Context, in *schema.Message) (endNode string, err error) {
 	fullResponse := in.Content
 	if fullResponse == "" {
-		log.GetLogger().Warn("[PlannerNode]规划响应为空")
+		log.GetLogger().Warn("[PlannerNode] Planning response is empty")
 		return compose.END, nil
 	}
 
 	if !isValidJSON(fullResponse) {
-		log.GetLogger().Warn("[PlannerNode]规划响应不是有效的JSON")
+		log.GetLogger().Warn("[PlannerNode] Planning response is not valid JSON")
 		return compose.END, nil
 	}
 
-	if err = compose.ProcessState[*State](ctx, func(ctx context.Context, state *State) error {
+	if err = compose.ProcessState(ctx, func(ctx context.Context, state *State) error {
 		state.fullPlan = fullResponse
 		return nil
 	}); err != nil {
-		log.GetLogger().Error("[PlannerNode]更新状态失败", zap.Error(err))
+		log.GetLogger().Error("[PlannerNode] Failed to update state", zap.Error(err))
 		return compose.END, err
 	}
 
@@ -120,42 +126,63 @@ func (n *PlannerNode) BranchNodes() map[string]bool {
 	return map[string]bool{string(config.SupervisorAgent): true, compose.END: true}
 }
 
-// 检测是否启用深度思考模式，并返回对应的模型
+// Check if deep thinking mode is enabled and return the corresponding model
 func (n *PlannerNode) getTargetModel(input map[string]any) model.ChatModel {
 	if isDeepThink, _ := input["deep_thinking_mode"].(bool); isDeepThink {
-		log.GetLogger().Info("[PlannerNode]使用深度思考模式")
+		log.GetLogger().Info("[PlannerNode] Using deep thinking mode")
 		return n.reasoningModel
 	}
 	return n.chatModel
 }
 
-// 检测是否需要在规划前进行搜索
-func (n *PlannerNode) checkSearchBeforePlanning(input map[string]any, userQuery string) {
+// Check if search is needed before planning
+func (n *PlannerNode) checkSearchBeforePlanning(ctx context.Context, input map[string]any, userQuery string) []*duckduckgo.SearchResult {
 	searchBeforePlanning, _ := input["search_before_planning"].(bool)
 
 	if !searchBeforePlanning {
-		return
+		return nil
 	}
 
-	// 这里应实现搜索逻辑，类似Python中的tavily_tool
-	// searchResults := search.Invoke(userQuery)
-	// 将搜索结果添加到提示中
+	searchReq := &duckduckgo.SearchRequest{
+		Query: userQuery,
+		Page:  1,
+	}
 
-	// TODO: 实现搜索功能
+	searchReqJson, err := json.Marshal(searchReq)
+	if err != nil {
+		log.GetLogger().Error("[PlannerNode] Failed to serialize search request", zap.Error(err))
+		return nil
+	}
 
-	log.GetLogger().Info("[PlannerNode]搜索后规划功能待实现")
+	searchResults, err := tools.GetDuckSearchTool().InvokableRun(ctx, string(searchReqJson))
+	if err != nil {
+		log.GetLogger().Error("[PlannerNode] Search failed", zap.Error(err))
+		return nil
+	}
+
+	var searchResp duckduckgo.SearchResponse
+	if err := json.Unmarshal([]byte(searchResults), &searchResp); err != nil {
+		log.GetLogger().Error("[PlannerNode] Failed to deserialize search response", zap.Error(err))
+		return nil
+	}
+
+	if len(searchResp.Results) == 0 {
+		return nil
+	}
+
+	return searchResp.Results
 }
 
-// cleanJSONResponse 清理响应中的JSON格式
+// cleanJSONResponse cleans the JSON format in the response
 func cleanJSONResponse(response string) string {
-	// 移除JSON代码块标记
+	// Remove JSON code block markers
 	response = strings.TrimPrefix(response, "```json")
 	response = strings.TrimPrefix(response, "```")
 	response = strings.TrimSuffix(response, "```")
 	return strings.TrimSpace(response)
 }
 
-// isValidJSON 验证字符串是否为有效的JSON
+// isValidJSON verifies if the string is valid JSON
 func isValidJSON(str string) bool {
 	var js json.RawMessage
 	return json.Unmarshal([]byte(str), &js) == nil

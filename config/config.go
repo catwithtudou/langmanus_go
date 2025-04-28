@@ -6,19 +6,19 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config 定义了应用的所有配置项
+// Config defines all configuration items for the application
 type Config struct {
-	// LLM配置
-	ReasoningLLM LLMConfig // 用于复杂推理任务的LLM
-	BasicLLM     LLMConfig // 用于简单直接任务的LLM
-	VisionLLM    LLMConfig // 用于需要视觉理解的任务的LLM
+	// LLM Configuration
+	ReasoningLLM LLMConfig // LLM for complex reasoning tasks
+	BasicLLM     LLMConfig // LLM for simple direct tasks
+	VisionLLM    LLMConfig // LLM for tasks requiring visual understanding
 
-	// 其他配置
+	// Other Configuration
 	TavilyMaxResults   int
 	ChromeInstancePath string
 }
 
-// LLMConfig 定义了LLM模型的基本配置
+// LLMConfig defines the basic configuration for LLM models
 type LLMConfig struct {
 	Model   string
 	BaseURL string
@@ -55,9 +55,9 @@ const (
 
 var config *Config
 
-// LoadConfig 加载配置
+// LoadConfig loads the configuration
 func LoadConfig() *Config {
-	// 加载.env文件
+	// Load .env file
 	_ = godotenv.Load()
 
 	config = &Config{
@@ -83,7 +83,7 @@ func LoadConfig() *Config {
 	return config
 }
 
-// GetConfig 获取当前配置
+// GetConfig retrieves the current configuration
 func GetConfig() *Config {
 	return config
 }

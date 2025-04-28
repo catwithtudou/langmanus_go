@@ -1,4 +1,4 @@
-package agent
+﻿package agent
 
 import (
 	"context"
@@ -20,7 +20,6 @@ func CreateResearcherReactAgent(ctx context.Context) (*react.Agent, error) {
 		Model: llm.GetLLMClient(config.AgentLLMap[config.ResearcherAgent]),
 		ToolsConfig: compose.ToolsNodeConfig{
 			Tools: []tool.BaseTool{
-
 				tools.GetDuckSearchTool(),
 				tools.GetCrawHtmlTool(),
 			},

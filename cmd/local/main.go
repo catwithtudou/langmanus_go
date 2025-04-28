@@ -27,8 +27,8 @@ func main() {
 		return
 	}
 
-	// 记录完整输出（包含元数据）
+	// Log complete output (including metadata)
 	log.GetLogger().Debug("[main]agent workflow complete output", zap.Any("output", output))
-	// 仅记录模型回复内容
+	// Log only model response content
 	log.GetLogger().Info("[main]agent workflow response", zap.String("content", output.Content))
 }

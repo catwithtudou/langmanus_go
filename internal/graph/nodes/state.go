@@ -19,7 +19,7 @@ type State struct {
 	searchBeforePlanning bool
 }
 
-// Router 用于定义下一步路由的结构体
+// Router is a struct used to define the next step routing
 type Router struct {
 	Next string `json:"next"`
 }

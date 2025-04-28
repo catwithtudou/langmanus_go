@@ -1,4 +1,4 @@
-package nodes
+﻿package nodes
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ResearcherNode     研究代理节点,负责执行研究任务
+// ResearcherNode is responsible for executing research tasks
 type ResearcherNode struct {
 	name      config.AgentType
 	chatModel model.ChatModel
@@ -41,21 +41,21 @@ func (n *ResearcherNode) Name() string {
 }
 
 func (n *ResearcherNode) Invoke(ctx context.Context, input *schema.Message, opts ...model.Option) (output *schema.Message, err error) {
-	log.GetLogger().Info("[ResearcherNode]开始执行研究任务")
+	log.GetLogger().Info("[ResearcherNode] Starting research task execution")
 
 	researcherAgent, err := agent.CreateResearcherReactAgent(ctx)
 	if err != nil {
-		log.GetLogger().Error("[ResearcherNode]创建研究代理失败", zap.Error(err))
+		log.GetLogger().Error("[ResearcherNode] Failed to create research agent", zap.Error(err))
 		return nil, err
 	}
 
 	output, err = researcherAgent.Generate(ctx, []*schema.Message{input})
 	if err != nil {
-		log.GetLogger().Error("[ResearcherNode]执行研究代理失败", zap.Error(err))
+		log.GetLogger().Error("[ResearcherNode] Failed to execute research agent", zap.Error(err))
 		return nil, err
 	}
 
-	log.GetLogger().Info("[ResearcherNode]研究代理执行完成", zap.Any("output", output))
+	log.GetLogger().Info("[ResearcherNode] Research agent execution completed", zap.Any("output", output))
 
 	return &schema.Message{
 		Content: output.Content,

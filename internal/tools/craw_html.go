@@ -36,7 +36,7 @@ var urlLoader *urlloader.Loader
 func initCrawHtmlTool(ctx context.Context) {
 	loader, err := urlloader.NewLoader(ctx, nil)
 	if err != nil {
-		log.GetLogger().Error("[CrawHtmlTool]初始化失败", zap.Error(err))
+		log.GetLogger().Error("[CrawHtmlTool] Initialization failed", zap.Error(err))
 		panic(err)
 	}
 	urlLoader = loader
@@ -49,26 +49,26 @@ func GetCrawHtmlTool() tool.InvokableTool {
 func (t *CrawHtmlTool) Info(_ context.Context) (*schema.ToolInfo, error) {
 	return &schema.ToolInfo{
 		Name: "crawl_tool",
-		Desc: "用于从指定URL爬取网页内容并转换为Markdown格式的工具。该工具会：\n" +
-			"1. 从URL加载HTML内容\n" +
-			"2. 提取页面标题和正文内容\n" +
-			"3. 将HTML转换为Markdown格式，确保内容具有良好的可读性\n" +
-			"4. 处理图片链接，确保使用绝对URL\n" +
-			"5. 返回结构化的JSON结果，包含标题和Markdown格式的内容\n\n" +
-			"设计目的：\n" +
-			"- 帮助LLM更好地理解网页内容\n" +
-			"- 提取干净的、结构化的文章内容\n" +
-			"- 将内容转换为易于LLM处理的格式\n" +
-			"- 保持图片和文本的完整性和可读性\n\n" +
-			"使用限制：\n" +
-			"- 仅用于爬取内容，不支持页面交互\n" +
-			"- 不支持执行数学计算\n" +
-			"- 不支持文件操作\n" +
-			"- 仅能使用搜索结果或用户提供的URL",
+		Desc: "A tool for crawling web content from a specified URL and converting it to Markdown format. This tool will:\n" +
+			"1. Load HTML content from the URL\n" +
+			"2. Extract page title and main content\n" +
+			"3. Convert HTML to Markdown format, ensuring good readability\n" +
+			"4. Process image links to ensure absolute URLs\n" +
+			"5. Return structured JSON result containing title and Markdown formatted content\n\n" +
+			"Design Purpose:\n" +
+			"- Help LLM better understand web content\n" +
+			"- Extract clean, structured article content\n" +
+			"- Convert content to a format easily processed by LLM\n" +
+			"- Maintain integrity and readability of images and text\n\n" +
+			"Usage Limitations:\n" +
+			"- Only for content crawling, no page interaction support\n" +
+			"- No mathematical computation support\n" +
+			"- No file operations support\n" +
+			"- Can only use search results or user-provided URLs",
 		ParamsOneOf: schema.NewParamsOneOfByParams(map[string]*schema.ParameterInfo{
 			"url": {
 				Type:     schema.String,
-				Desc:     "要爬取的网页URL，必须是有效的URL地址",
+				Desc:     "The URL of the webpage to crawl, must be a valid URL address",
 				Required: true,
 			},
 		}),
@@ -79,7 +79,7 @@ func (t *CrawHtmlTool) InvokableRun(ctx context.Context, argumentsInJSON string,
 	input := &crawHtmlToolInput{}
 	err := json.Unmarshal([]byte(argumentsInJSON), input)
 	if err != nil {
-		log.GetLogger().Error("[CrawHtmlTool]反序列化失败", zap.Error(err))
+		log.GetLogger().Error("[CrawHtmlTool] Deserialization failed", zap.Error(err))
 		return "", err
 	}
 
@@ -87,7 +87,7 @@ func (t *CrawHtmlTool) InvokableRun(ctx context.Context, argumentsInJSON string,
 		URI: input.URL,
 	})
 	if err != nil {
-		log.GetLogger().Error("[CrawHtmlTool]加载url失败", zap.Error(err))
+		log.GetLogger().Error("[CrawHtmlTool] Failed to load URL", zap.Error(err))
 		return "", err
 	}
 
@@ -95,59 +95,59 @@ func (t *CrawHtmlTool) InvokableRun(ctx context.Context, argumentsInJSON string,
 		URL: input.URL,
 	}
 	for _, doc := range docs {
-		// 从 MetaData 中获取标题
+		// Get title from MetaData
 		if title, ok := doc.MetaData["title"].(string); ok {
 			result.Title = title
 		}
 
-		// 转换 HTML 到 Markdown
+		// Convert HTML to Markdown
 		markdownContent := htmlToMarkdown(doc.Content)
 
-		// 处理图片链接
+		// Process image links
 		result.Content = processImages(markdownContent, input.URL)
 	}
 
-	// 将结果转换为 JSON
+	// Convert result to JSON
 	jsonResult, err := json.Marshal(result)
 	if err != nil {
-		log.GetLogger().Error("[CrawHtmlTool]序列化结果失败", zap.Error(err))
+		log.GetLogger().Error("[CrawHtmlTool] Failed to serialize result", zap.Error(err))
 		return "", err
 	}
 
-	log.GetLogger().Info("[CrawHtmlTool]结果", zap.String("result", string(jsonResult)))
+	log.GetLogger().Info("[CrawHtmlTool] Result", zap.String("result", string(jsonResult)))
 
 	return string(jsonResult), nil
 }
 
-// htmlToMarkdown 将 HTML 内容转换为 Markdown 格式
+// htmlToMarkdown converts HTML content to Markdown format
 func htmlToMarkdown(htmlContent string) string {
-	// 创建解析器
+	// Create parser
 	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
 	p := parser.NewWithExtensions(extensions)
 
-	// 创建 HTML 渲染器
+	// Create HTML renderer
 	htmlFlags := html.CommonFlags | html.HrefTargetBlank
 	opts := html.RendererOptions{Flags: htmlFlags}
 	renderer := html.NewRenderer(opts)
 
-	// 将 HTML 转换为 Markdown
+	// Convert HTML to Markdown
 	md := markdown.ToHTML([]byte(htmlContent), p, renderer)
 	return string(md)
 }
 
-// processImages 处理 Markdown 中的图片链接
+// processImages processes image links in Markdown content
 func processImages(markdownContent string, baseURL string) string {
-	// 匹配 Markdown 图片语法
+	// Match Markdown image syntax
 	re := regexp.MustCompile(`!\[(.*?)\]\((.*?)\)`)
 
-	// 替换图片链接
+	// Replace image links
 	return re.ReplaceAllStringFunc(markdownContent, func(match string) string {
 		parts := re.FindStringSubmatch(match)
 		if len(parts) != 3 {
 			return match
 		}
 
-		// 解析相对 URL
+		// Parse relative URL
 		imgURL, err := neturl.Parse(parts[2])
 		if err != nil {
 			return match
@@ -158,7 +158,7 @@ func processImages(markdownContent string, baseURL string) string {
 			return match
 		}
 
-		// 合并 URL
+		// Merge URLs
 		absoluteURL := base.ResolveReference(imgURL).String()
 		return "![" + parts[1] + "](" + absoluteURL + ")"
 	})

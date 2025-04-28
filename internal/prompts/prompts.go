@@ -16,21 +16,18 @@ import (
 )
 
 const (
-	UserQueryKey   = "user_query"
 	CurrentTimeKey = "CURRENT_TIME"
+	TeamMembersKey = "TEAM_MEMBERS"
 )
 
-func GetSystemPromptSchemaMsgWithInput(ctx context.Context, agent config.AgentType, input map[string]any) []*schema.Message {
+func GetSystemPromptSchemaMsgWithInput(ctx context.Context, agent config.AgentType, userQuery string) []*schema.Message {
 	params := make(map[string]any)
-	for k, v := range input {
-		params[k] = v
-	}
-
 	params[CurrentTimeKey] = time.Now().Format("2006-01-02 15:04:05")
+	params[TeamMembersKey] = config.TeamMembers
 
 	template := prompt.FromMessages(schema.FString,
 		schema.SystemMessage(GetSystemPrompt(agent)),
-		schema.UserMessage(UserQueryKey))
+		schema.UserMessage(userQuery))
 
 	messages, err := template.Format(ctx, params)
 	if err != nil {
@@ -44,6 +41,7 @@ func GetSystemPromptSchemaMsgWithInput(ctx context.Context, agent config.AgentTy
 func GetSystemPromptSchemaMsgWithMsg(ctx context.Context, agent config.AgentType, schemaMsg *schema.Message) []*schema.Message {
 	params := make(map[string]any)
 	params[CurrentTimeKey] = time.Now().Format("2006-01-02 15:04:05")
+	params[TeamMembersKey] = config.TeamMembers
 
 	template := prompt.FromMessages(schema.FString,
 		schema.SystemMessage(GetSystemPrompt(agent)),
@@ -81,9 +79,9 @@ func GetSystemPrompt(agent config.AgentType) string {
 	}
 }
 
-// loadPromptTemplate 从文件系统中读取提示模板并处理
+// loadPromptTemplate reads and processes prompt templates from the file system
 func loadPromptTemplate(promptName string) string {
-	// 获取当前工作目录，使得能够支持从不同路径运行
+	// Get current working directory to support running from different paths
 	workDir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		log.GetLogger().Error("[loadPromptTemplate]failed to get working directory",
@@ -91,7 +89,7 @@ func loadPromptTemplate(promptName string) string {
 		return ""
 	}
 
-	// 尝试不同的可能路径来查找模板文件
+	// Try different possible paths to find the template file
 	possiblePaths := []string{
 		filepath.Join(workDir, "internal", "prompts", promptName+".md"),
 		filepath.Join("internal", "prompts", promptName+".md"),
@@ -102,7 +100,7 @@ func loadPromptTemplate(promptName string) string {
 	var templatePath string
 	var readErr error
 
-	// 尝试每个可能的路径
+	// Try each possible path
 	for _, path := range possiblePaths {
 		content, readErr = os.ReadFile(path)
 		if readErr == nil {
@@ -111,7 +109,7 @@ func loadPromptTemplate(promptName string) string {
 		}
 	}
 
-	// 如果所有路径都失败，则记录错误并返回空字符串
+	// If all paths fail, log error and return empty string
 	if readErr != nil {
 		log.GetLogger().Error("[loadPromptTemplate]failed to read template file",
 			zap.Strings("attempted_paths", possiblePaths),
@@ -122,10 +120,10 @@ func loadPromptTemplate(promptName string) string {
 	log.GetLogger().Debug("[loadPromptTemplate]successfully loaded template",
 		zap.String("path", templatePath))
 
-	// 将模板内容转换为字符串
+	// Convert template content to string
 	template := string(content)
 
-	// 将特殊格式的占位符 <<VAR>> 转换为标准的 {VAR} 格式
+	// Convert special format placeholders <<VAR>> to standard {VAR} format
 	re := regexp.MustCompile(`<<([^>>]+)>>`)
 	template = re.ReplaceAllString(template, "{$1}")
 
