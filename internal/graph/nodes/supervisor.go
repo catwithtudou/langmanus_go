@@ -84,7 +84,7 @@ func (n *SupervisorNode) Branch(ctx context.Context, in *schema.Message) (endNod
 		return compose.END, nil
 	}
 
-	if err = compose.ProcessState[*State](ctx, func(ctx context.Context, state *State) error {
+	if err = compose.ProcessState(ctx, func(ctx context.Context, state *State) error {
 		state.next = next
 		return nil
 	}); err != nil {

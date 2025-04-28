@@ -1,4 +1,4 @@
-package nodes
+﻿package nodes
 
 import (
 	"fmt"
@@ -15,6 +15,12 @@ type ComposeNodes struct {
 	SupervisorNode  *SupervisorNode
 	Researcher      *compose.Lambda
 	ResearcherNode  *ResearcherNode
+	Browser         *compose.Lambda
+	BrowserNode     *BrowserNode
+	Coder           *compose.Lambda
+	CoderNode       *CoderNode
+	Reporter        *compose.Lambda
+	ReporterNode    *ReporterNode
 }
 
 func BuildNodes() (*ComposeNodes, error) {
@@ -38,6 +44,21 @@ func BuildNodes() (*ComposeNodes, error) {
 		return nil, fmt.Errorf("failed to build researcher node: %w", err)
 	}
 
+	browser, browserNode, err := BrowserCompose()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build browser node: %w", err)
+	}
+
+	coder, coderNode, err := CoderCompose()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build coder node: %w", err)
+	}
+
+	reporter, reporterNode, err := ReporterCompose()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build reporter node: %w", err)
+	}
+
 	return &ComposeNodes{
 		Coordinator:     coordinator,
 		CoordinatorNode: coordinatorNode,
@@ -47,5 +68,11 @@ func BuildNodes() (*ComposeNodes, error) {
 		SupervisorNode:  supervisorNode,
 		Researcher:      researcher,
 		ResearcherNode:  researcherNode,
+		Browser:         browser,
+		BrowserNode:     browserNode,
+		Coder:           coder,
+		CoderNode:       coderNode,
+		Reporter:        reporter,
+		ReporterNode:    reporterNode,
 	}, nil
 }

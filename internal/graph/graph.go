@@ -1,4 +1,4 @@
-package graph
+﻿package graph
 
 import (
 	"context"
@@ -26,6 +26,9 @@ func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.M
 	_ = g.AddLambdaNode(string(config.PlannerAgent), nodes.Planner)
 	_ = g.AddLambdaNode(string(config.SupervisorAgent), nodes.Supervisor)
 	_ = g.AddLambdaNode(string(config.ResearcherAgent), nodes.Researcher)
+	_ = g.AddLambdaNode(string(config.BrowserAgent), nodes.Browser)
+	_ = g.AddLambdaNode(string(config.CoderAgent), nodes.Coder)
+	_ = g.AddLambdaNode(string(config.ReporterAgent), nodes.Reporter)
 
 	_ = g.AddEdge(compose.START, string(config.CoordinatorAgent))
 
@@ -42,6 +45,9 @@ func BuildGraph(ctx context.Context) (compose.Runnable[map[string]any, *schema.M
 		nodes.SupervisorNode.BranchNodes()))
 
 	_ = g.AddEdge(string(config.ResearcherAgent), string(config.SupervisorAgent))
+	_ = g.AddEdge(string(config.BrowserAgent), string(config.SupervisorAgent))
+	_ = g.AddEdge(string(config.CoderAgent), string(config.SupervisorAgent))
+	_ = g.AddEdge(string(config.ReporterAgent), string(config.SupervisorAgent))
 
 	return g.Compile(ctx)
 }
