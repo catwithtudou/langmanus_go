@@ -6,4 +6,5 @@ func InitTools(ctx context.Context) {
 	initDuckSearchTool(ctx)
 	initCrawHtmlTool(ctx)
 	initGoReplTool()
+	initBrowserTool(ctx)
 }

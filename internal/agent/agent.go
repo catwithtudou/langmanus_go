@@ -46,7 +46,7 @@ func CreateBrowserReactAgent(ctx context.Context) (*react.Agent, error) {
 		Model: llm.GetLLMClient(config.AgentLLMap[config.BrowserAgent]),
 		ToolsConfig: compose.ToolsNodeConfig{
 			Tools: []tool.BaseTool{
-				// TODO: add tools
+				tools.GetBrowserTool(),
 			},
 		},
 		MessageModifier: getMessageModifier(config.BrowserAgent),

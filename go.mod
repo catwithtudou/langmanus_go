@@ -1,22 +1,30 @@
 module catwithtudou/langmanus_go
 
-go 1.23.7
+go 1.24
 
 require (
 	github.com/cloudwego/eino v0.3.27
+	github.com/cloudwego/eino-ext/components/tool/browseruse v0.0.0-20250429121045-a2545a66f5cf
 	github.com/gomarkdown/markdown v0.0.0-20250311123330-531bef5e742b
+	github.com/traefik/yaegi v0.16.1
 )
 
 require (
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/cascadia v1.3.1 // indirect
 	github.com/aymerick/douceur v0.2.0 // indirect
+	github.com/chromedp/cdproto v0.0.0-20250319231242-a755498943c8 // indirect
+	github.com/chromedp/chromedp v0.13.3 // indirect
+	github.com/chromedp/sysutil v1.1.0 // indirect
 	github.com/cloudwego/eino-ext/components/document/parser/html v0.0.0-20241224063832-9fbcc0e56c28 // indirect
+	github.com/go-json-experiment/json v0.0.0-20250223041408-d3c622f1b874 // indirect
+	github.com/gobwas/httphead v0.1.0 // indirect
+	github.com/gobwas/pool v0.2.1 // indirect
+	github.com/gobwas/ws v1.4.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.27 // indirect
-	github.com/traefik/yaegi v0.16.1 // indirect
 	github.com/volcengine/volc-sdk-golang v1.0.23 // indirect
 	github.com/volcengine/volcengine-go-sdk v1.0.185 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
