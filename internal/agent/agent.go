@@ -33,7 +33,8 @@ func CreateCoderReactAgent(ctx context.Context) (*react.Agent, error) {
 		ToolsConfig: compose.ToolsNodeConfig{
 			Tools: []tool.BaseTool{
 				tools.GetBashTool(),
-				// TODO: add tools
+				tools.GetPythonReplTool(),
+				tools.GetGoReplTool(),
 			},
 		},
 		MessageModifier: getMessageModifier(config.CoderAgent),
